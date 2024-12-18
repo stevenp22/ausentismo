@@ -1,7 +1,13 @@
 "use server";
 import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
-import { registrarTrabajadorDB, usuario } from "./data";
+import {
+  actualizarTrabajadorDB,
+  buscarTrabajadorDB,
+  buscarTrabajadorIdDB,
+  registrarTrabajadorDB,
+  usuario,
+} from "./data";
 import { CreateTrabajador } from "./zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
@@ -37,26 +43,79 @@ export async function buscarUsuario(documento: string) {
 
 export async function registrarTrabajador(formData: FormData) {
   const rawFormData = Object.fromEntries(formData.entries());
-  const firstKey = Object.keys(rawFormData)[0];
-  if (firstKey) {
-    delete rawFormData[firstKey];
-  }
   CreateTrabajador.parse(rawFormData);
-  //console.log(rawFormData);
   const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string);
   fechaNacimiento.setDate(fechaNacimiento.getDate() + 1);
-  await registrarTrabajadorDB(
-    rawFormData.documento as string,
-    rawFormData.nombre as string,
-    rawFormData.genero as string,
-    fechaNacimiento,
-    rawFormData.cargo as string,
-    rawFormData.eps as string,
-    Number(rawFormData.salario),
-    rawFormData.ocupacion as string,
-    rawFormData.tipoVinculacion as string,
-    rawFormData.afp as string,
-    rawFormData.jornada as string,
-    rawFormData.contratacion as string
-  );
+  try {
+    await registrarTrabajadorDB(
+      rawFormData.documento as string,
+      rawFormData.nombre as string,
+      rawFormData.genero as string,
+      fechaNacimiento,
+      rawFormData.cargo as string,
+      rawFormData.eps as string,
+      Number(rawFormData.salario),
+      rawFormData.ocupacion as string,
+      rawFormData.tipoVinculacion as string,
+      rawFormData.afp as string,
+      rawFormData.jornada as string,
+      rawFormData.contratacion as string
+    );
+  } catch (error) {
+    console.log("Error al registrar trabajador", error);
+    throw new Error("Error al registrar trabajador");
+  }
+  revalidatePath("/trabajadores");
+  redirect("/trabajadores");
+}
+
+export async function buscarTrabajador(documento: string) {
+  try {
+    const resultado = await buscarTrabajadorDB(documento);
+    console.log("Resultado de la busqueda de trabajadores", resultado);
+    return resultado;
+  } catch (error) {
+    console.log("Error al buscar trabajador", error);
+    throw new Error("Error al buscar trabajador");
+  }
+}
+
+export async function buscarTrabajadorId(id: string) {
+  try {
+    const resultado = await buscarTrabajadorIdDB(id);
+    //console.log("Resultado de la busqueda de trabajadores", resultado);
+    return resultado;
+  } catch (error) {
+    console.log("Error al buscar trabajador", error);
+    throw new Error("Error al buscar trabajador");
+  }
+}
+
+export async function actualizarTrabajador(id: number, formData: FormData) {
+  const rawFormData = Object.fromEntries(formData.entries());
+  CreateTrabajador.parse(rawFormData);
+  const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string);
+  fechaNacimiento.setDate(fechaNacimiento.getDate() + 1);
+  try {
+    await actualizarTrabajadorDB(
+      id,
+      rawFormData.documento as string,
+      rawFormData.nombre as string,
+      rawFormData.genero as string,
+      fechaNacimiento,
+      rawFormData.cargo as string,
+      rawFormData.eps as string,
+      Number(rawFormData.salario),
+      rawFormData.ocupacion as string,
+      rawFormData.tipoVinculacion as string,
+      rawFormData.afp as string,
+      rawFormData.jornada as string,
+      rawFormData.contratacion as string
+    );
+  } catch (error) {
+    console.log("Error al actualizar trabajador", error);
+    throw new Error("Error al actualizar trabajador");
+  }
+  revalidatePath("/trabajadores");
+  redirect("/trabajadores");
 }

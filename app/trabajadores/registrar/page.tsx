@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { registrarTrabajador } from "../../lib/actions";
 
 export default function Page() {
@@ -159,12 +160,12 @@ export default function Page() {
             >
               Registrar
             </button>
-            <button
-              type="button"
-              className="md:w-1/2 bg-green-500 text-white py-2 rounded-md hover:bg-green-600 ml-2"
+            <Link
+              href={`/trabajadores`}
+              className="md:w-1/2 bg-green-500 text-white py-2 rounded-md hover:bg-green-600 ml-2 text-center"
             >
               Regresar
-            </button>
+            </Link>
           </div>
         </form>
       </div>

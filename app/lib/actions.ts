@@ -5,10 +5,11 @@ import {
   actualizarTrabajadorDB,
   buscarTrabajadorDB,
   buscarTrabajadorIdDB,
+  registrarAusentismoDB,
   registrarTrabajadorDB,
   usuario,
 } from "./data";
-import { CreateTrabajador } from "./zod";
+import { CreateAusentismo, CreateTrabajador } from "./zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -115,6 +116,34 @@ export async function actualizarTrabajador(id: number, formData: FormData) {
   } catch (error) {
     console.log("Error al actualizar trabajador", error);
     throw new Error("Error al actualizar trabajador");
+  }
+  revalidatePath("/trabajadores");
+  redirect("/trabajadores");
+}
+
+export async function registrarAusentismo(formData: FormData) {
+  const rawFormData = Object.fromEntries(formData.entries());
+  console.log(rawFormData);
+  CreateAusentismo.parse(rawFormData);
+  const fechaInicio = new Date(rawFormData.fechaInicio as string);
+  fechaInicio.setDate(fechaInicio.getDate() + 1);
+  const fechaFinalizacion = new Date(rawFormData.fechaFinalizacion as string);
+  fechaFinalizacion.setDate(fechaFinalizacion.getDate() + 1);
+  try {
+    await registrarAusentismoDB(
+      Number(rawFormData.trabajador_id),
+      rawFormData.contingencia as string,
+      fechaInicio,
+      fechaFinalizacion,
+      Number(rawFormData.diasAusencia),
+      rawFormData.valorAusentismo as string,
+      rawFormData.proceso as string,
+      rawFormData.factorPrestacional as string,
+      rawFormData.observaciones as string
+    );
+  } catch (error) {
+    console.log("Error al registrar ausentismo del trabajador", error);
+    throw new Error("Error al registrar ausentismo del trabajador");
   }
   revalidatePath("/trabajadores");
   redirect("/trabajadores");

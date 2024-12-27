@@ -153,3 +153,40 @@ export async function actualizarTrabajadorDB(
     }
   }
 }
+
+export async function registrarAusentismoDB(
+  trabajador_id: number,
+  contingencia: string,
+  fechaInicio: Date,
+  fechaFinalizacion: Date,
+  diasAusencia: number,
+  valorAusentismo: string,
+  proceso: string,
+  factorPrestacional: string,
+  observaciones: string
+) {
+  const connection = await mysql.createConnection(mySqlConfig);
+  try {
+    await connection.query(
+      "INSERT INTO Ausentismo (trabajador_id, contingencia, fechaInicio, fechaFinalizacion, diasAusencia, valorAusentismo, proceso, factorPrestacional, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      [
+        trabajador_id,
+        contingencia,
+        fechaInicio,
+        fechaFinalizacion,
+        diasAusencia,
+        valorAusentismo,
+        proceso,
+        factorPrestacional,
+        observaciones,
+      ]
+    );
+  } catch (error) {
+    console.log("Error al registrar ausentismo", error);
+    throw new Error("Error al registrar ausentimos");
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
+  }
+}

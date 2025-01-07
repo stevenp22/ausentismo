@@ -10,7 +10,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   const [diasAusencia, setDiasAusencia] = useState(0);
   const [valorAusentismo, setValorAusentismo] = useState("");
   const [factorPrestacional, setFactorPrestacional] = useState(1.0);
-  const [warning, setWarning] = useState("");
   const [id, setId] = useState<string>("");
   const [salario, setSalario] = useState(0);
   const [contingencia, setContingencia] = useState("");
@@ -55,27 +54,34 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    console.log(e.target.value);
     if (e.target.name === "fechaInicio") {
+      if (e.target.value > fechaFinalizacion && fechaFinalizacion) {
+        alert("La fecha de inicio no puede ser mayor a la fecha de finalización");
+        setFechaInicio("");
+        return;
+      }
       setFechaInicio(e.target.value);
     }
-    if (e.target.name === "fechaFinalizacion") {
+    if (e.target.name === "fechaFinalizacion" && fechaInicio) {
+      if (fechaInicio > e.target.value) {
+        alert("La fecha de inicio no puede ser mayor a la fecha de finalización");
+        setFechaFinalizacion("");
+        return;
+      }
       setFechaFinalizacion(e.target.value);
     }
     if (e.target.name === "factorPrestacional") {
       const value = parseFloat(e.target.value);
       if (isNaN(value) || value < 1.0) {
-        setWarning("El factor prestacional debe ser mayor o igual a 1");
+        alert("El factor prestacional no puede ser menor a 1.0");
         setFactorPrestacional(1.0);
       } else {
-        setWarning("");
         setFactorPrestacional(value);
       }
     }
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
-    console.log(e.target.value);
     if (e.target.name === "contingencia") {
       setContingencia(e.target.value);
     }
@@ -236,7 +242,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               step="0.01"
               required
             />
-            {warning && <p className="text-red-500">{warning}</p>}
           </div>
           <div className="md:col-span-2">
             <label className="block text-gray-700">Observaciones</label>

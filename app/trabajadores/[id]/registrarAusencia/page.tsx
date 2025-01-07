@@ -2,67 +2,85 @@
 import { buscarTrabajadorId, registrarAusentismo } from "@/app/lib/actions";
 import Link from "next/link";
 import { contingencias, procesos } from "@/app/lib/definitions";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 
 export default function Page(props: { params: Promise<{ id: string }> }) {
-  const fechaInicioRef = useRef<HTMLInputElement>(null);
-  const fechaFinalizacionRef = useRef<HTMLInputElement>(null);
-  const diasAusenciaRef = useRef<HTMLInputElement>(null);
-  const valorAusentismoRef = useRef<HTMLInputElement>(null);
+  const [fechaInicio, setFechaInicio] = useState("");
+  const [fechaFinalizacion, setFechaFinalizacion] = useState("");
+  const [diasAusencia, setDiasAusencia] = useState(0);
+  const [valorAusentismo, setValorAusentismo] = useState("");
   const [factorPrestacional, setFactorPrestacional] = useState(1.0);
   const [warning, setWarning] = useState("");
   const [id, setId] = useState<string>("");
+  const [salario, setSalario] = useState(0);
+  const [contingencia, setContingencia] = useState("");
+  const [licenciaFraccionada, setLicenciaFraccionada] = useState("");
 
   useEffect(() => {
     const fetchParams = async () => {
       const params = await props.params;
+      const trabajador = await buscarTrabajadorId(params.id);
       setId(params.id);
+      setSalario(trabajador.salario);
     };
     fetchParams();
   }, [props.params]);
 
-  const handleFactorPrestacionalChange = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const value = parseFloat(e.target.value);
-    if (isNaN(value) || value < 1.0) {
-      setWarning("El factor prestacional debe ser mayor o igual a 1");
-      setFactorPrestacional(1.0);
-    } else {
-      setWarning("");
-      setFactorPrestacional(value);
-    }
-  };
-
   const calcularDiasAusencia = () => {
-    if (!fechaInicioRef.current || !fechaFinalizacionRef.current) return;
-    const fechaInicio = new Date(fechaInicioRef.current.value);
-    const fechaFinalizacion = new Date(fechaFinalizacionRef.current.value);
-    if (fechaInicio && fechaFinalizacion) {
-      const diferenciaTiempo =
-        fechaFinalizacion.getTime() - fechaInicio.getTime();
+    if (!fechaInicio || !fechaFinalizacion) return;
+    const fechaIni = new Date(fechaInicio);
+    const fechaFinal = new Date(fechaFinalizacion);
+    if (fechaIni && fechaFinal) {
+      const diferenciaTiempo = fechaFinal.getTime() - fechaIni.getTime();
       const diferenciaDias = diferenciaTiempo / (1000 * 3600 * 24);
-      if (diasAusenciaRef.current) {
-        diasAusenciaRef.current.value = (
-          diferenciaDias >= 0 ? diferenciaDias : 0
-        ).toString();
+      if (diferenciaDias) {
+        setDiasAusencia(diferenciaDias >= 0 ? diferenciaDias : 0);
+        return diferenciaDias >= 0 ? diferenciaDias : 0;
       }
     }
   };
 
   const valor = async () => {
-    const trabajador = await buscarTrabajadorId(id);
-    const salario = trabajador.salario;
-    const dias = diasAusenciaRef.current?.value;
+    const dias = await calcularDiasAusencia();
     const factor = salario / 30;
-    const valor = factor * Number(dias);
+    const valor = dias ? factor * dias : 0;
     const valorFactorPrestacional = valor * factorPrestacional;
     const valorFormateado = valorFactorPrestacional.toLocaleString("es-CO", {
       style: "currency",
       currency: "COP",
     });
-    if (valorAusentismoRef.current) {
-      valorAusentismoRef.current.value = valorFormateado.toString();
+    if (valorFormateado) {
+      setValorAusentismo(valorFormateado);
+    }
+  };
+
+  const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    console.log(e.target.value);
+    if (e.target.name === "fechaInicio") {
+      setFechaInicio(e.target.value);
+    }
+    if (e.target.name === "fechaFinalizacion") {
+      setFechaFinalizacion(e.target.value);
+    }
+    if (e.target.name === "factorPrestacional") {
+      const value = parseFloat(e.target.value);
+      if (isNaN(value) || value < 1.0) {
+        setWarning("El factor prestacional debe ser mayor o igual a 1");
+        setFactorPrestacional(1.0);
+      } else {
+        setWarning("");
+        setFactorPrestacional(value);
+      }
+    }
+  };
+
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    console.log(e.target.value);
+    if (e.target.name === "contingencia") {
+      setContingencia(e.target.value);
+    }
+    if (e.target.name === "licenciaFraccionada") {
+      setLicenciaFraccionada(e.target.value);
     }
   };
 
@@ -85,6 +103,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
               defaultValue={""}
               required
+              onChange={handleSelectChange}
             >
               <option value="" disabled>
                 Seleccione una opción
@@ -96,6 +115,45 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               ))}
             </select>
           </div>
+          {[
+            "Accidente de Trabajo",
+            "Enfermedad General",
+            "Enfermedad Laboral",
+          ].includes(contingencia) && (
+            <div>
+              <label className="block text-gray-700">Diagnóstico CIE-10</label>
+              <input
+                id="diagnosticoCIE10"
+                name="diagnosticoCIE10"
+                type="text"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+              />
+            </div>
+          )}
+          {["Licencia de Maternidad"].includes(contingencia) && (
+            <div>
+              <label className="block text-gray-700">
+                Licencia Fraccionada
+              </label>
+              <select
+                id="licenciaFraccionada"
+                name="licenciaFraccionada"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                defaultValue={""}
+                required
+                onChange={handleSelectChange}
+              >
+                <option value="">No</option>
+                <option value="1">1 Semana</option>
+                <option value="2">2 Semanas</option>
+              </select>
+              <label className="block text-red-700">
+                Las licencias de maternidad se registra conforme a lo definido
+                en la Ley 2114 del 29 de Julio del 2021.
+              </label>
+            </div>
+          )}
           <div>
             <label className="block text-gray-700">Fecha Inicio</label>
             <input
@@ -104,8 +162,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               type="date"
               className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
               required
-              ref={fechaInicioRef}
-              onChange={calcularDiasAusencia}
+              value={fechaInicio}
+              onChange={handleInputChange}
               onBlur={valor}
             />
           </div>
@@ -117,8 +175,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               type="date"
               className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
               required
-              ref={fechaFinalizacionRef}
-              onChange={calcularDiasAusencia}
+              value={fechaFinalizacion}
+              onChange={handleInputChange}
               onBlur={valor}
             />
           </div>
@@ -127,10 +185,10 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
             <input
               id="diasAusencia"
               name="diasAusencia"
-              type="text"
+              type="number"
               className="mt-1 block w-full border-2 rounded-md shadow-sm p-2 text-lg text-black bg-gray-200"
               required
-              ref={diasAusenciaRef}
+              value={diasAusencia}
               readOnly
             />
           </div>
@@ -141,7 +199,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               name="valorAusentismo"
               type="text"
               className="mt-1 block w-full border-2 rounded-md shadow-sm p-2 text-lg text-black bg-gray-200"
-              ref={valorAusentismoRef}
+              value={valorAusentismo}
               readOnly
             />
           </div>
@@ -171,7 +229,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               name="factorPrestacional"
               type="number"
               value={factorPrestacional}
-              onChange={handleFactorPrestacionalChange}
+              onChange={handleInputChange}
               onBlur={valor}
               className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
               min="1"

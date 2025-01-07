@@ -129,6 +129,12 @@ export async function registrarAusentismo(formData: FormData) {
   fechaInicio.setDate(fechaInicio.getDate() + 1);
   const fechaFinalizacion = new Date(rawFormData.fechaFinalizacion as string);
   fechaFinalizacion.setDate(fechaFinalizacion.getDate() + 1);
+  if (fechaInicio > fechaFinalizacion) {
+    throw new Error(
+      "La fecha de inicio no puede ser mayor a la de finalización"
+    );
+  }
+  const fechaRegistro = new Date().toISOString().split('T')[0];
   try {
     await registrarAusentismoDB(
       Number(rawFormData.trabajador_id),
@@ -139,7 +145,8 @@ export async function registrarAusentismo(formData: FormData) {
       rawFormData.valorAusentismo as string,
       rawFormData.proceso as string,
       rawFormData.factorPrestacional as string,
-      rawFormData.observaciones as string
+      rawFormData.observaciones as string,
+      fechaRegistro,
     );
   } catch (error) {
     console.log("Error al registrar ausentismo del trabajador", error);

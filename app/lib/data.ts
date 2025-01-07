@@ -163,12 +163,13 @@ export async function registrarAusentismoDB(
   valorAusentismo: string,
   proceso: string,
   factorPrestacional: string,
-  observaciones: string
+  observaciones: string,
+  fechaRegistro: string
 ) {
   const connection = await mysql.createConnection(mySqlConfig);
   try {
     await connection.query(
-      "INSERT INTO Ausentismo (trabajador_id, contingencia, fechaInicio, fechaFinalizacion, diasAusencia, valorAusentismo, proceso, factorPrestacional, observaciones) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)",
+      "INSERT INTO Ausentismo (trabajador_id, contingencia, fechaInicio, fechaFinalizacion, diasAusencia, valorAusentismo, proceso, factorPrestacional, observaciones, fechaRegistro) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
       [
         trabajador_id,
         contingencia,
@@ -179,6 +180,7 @@ export async function registrarAusentismoDB(
         proceso,
         factorPrestacional,
         observaciones,
+        fechaRegistro,
       ]
     );
   } catch (error) {

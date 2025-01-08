@@ -3,10 +3,14 @@ import { buscarTrabajadorId, registrarAusentismo } from "@/app/lib/actions";
 import Link from "next/link";
 import { contingencias, procesos } from "@/app/lib/definitions";
 import { useEffect, useState } from "react";
+import { addDays } from "date-fns";
+import { set } from "zod";
 
 export default function Page(props: { params: Promise<{ id: string }> }) {
   const [fechaInicio, setFechaInicio] = useState("");
   const [fechaFinalizacion, setFechaFinalizacion] = useState("");
+  const [isFechaFinalizacionDisabled, setIsFechaFinalizacionDisabled] =
+    useState(false);
   const [diasAusencia, setDiasAusencia] = useState(0);
   const [valorAusentismo, setValorAusentismo] = useState("");
   const [factorPrestacional, setFactorPrestacional] = useState(1.0);
@@ -55,16 +59,35 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === "fechaInicio") {
+      if (new Date(e.target.value).getTime() > Date.now()) {
+        alert("La fecha de inicio no puede ser mayor a la fecha actual");
+        setFechaInicio("");
+        return;
+      }
+      if (["Licencia de Maternidad"].includes(contingencia)) {
+        const fechaInicioDate = new Date(e.target.value);
+        const nuevaFechaFinalizacion = addDays(fechaInicioDate, 126);
+        setFechaFinalizacion(
+          nuevaFechaFinalizacion.toISOString().split("T")[0]
+        );
+        setIsFechaFinalizacionDisabled(true);
+      } else {
+        setIsFechaFinalizacionDisabled(false);
+      }
       if (e.target.value > fechaFinalizacion && fechaFinalizacion) {
-        alert("La fecha de inicio no puede ser mayor a la fecha de finalización");
+        alert(
+          "La fecha de inicio no puede ser mayor a la fecha de finalización"
+        );
         setFechaInicio("");
         return;
       }
       setFechaInicio(e.target.value);
     }
-    if (e.target.name === "fechaFinalizacion" && fechaInicio) {
-      if (fechaInicio > e.target.value) {
-        alert("La fecha de inicio no puede ser mayor a la fecha de finalización");
+    if (e.target.name === "fechaFinalizacion") {
+      if (fechaInicio > e.target.value && fechaInicio) {
+        alert(
+          "La fecha de inicio no puede ser mayor a la fecha de finalización"
+        );
         setFechaFinalizacion("");
         return;
       }
@@ -184,6 +207,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               value={fechaFinalizacion}
               onChange={handleInputChange}
               onBlur={valor}
+              disabled={isFechaFinalizacionDisabled}
             />
           </div>
           <div>

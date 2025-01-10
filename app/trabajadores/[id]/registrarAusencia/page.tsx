@@ -3,21 +3,26 @@ import { buscarTrabajadorId, registrarAusentismo } from "@/app/lib/actions";
 import Link from "next/link";
 import { contingencias, procesos } from "@/app/lib/definitions";
 import { useEffect, useState } from "react";
-import { addDays } from "date-fns";
-import { set } from "zod";
+import { addDays, set } from "date-fns";
 
 export default function Page(props: { params: Promise<{ id: string }> }) {
   const [fechaInicio, setFechaInicio] = useState("");
+  const [isFechaInicioDisabled, setIsFechaInicioDisabled] = useState(false);
   const [fechaFinalizacion, setFechaFinalizacion] = useState("");
   const [isFechaFinalizacionDisabled, setIsFechaFinalizacionDisabled] =
     useState(false);
+  const [fechaNacimiento, setFechaNacimiento] = useState("");
+  const [fechaInicioPreparto, setFechaInicioPreparto] = useState("");
+  const [fechaFinPreparto, setFechaFinPreparto] = useState("");
+  const [fechaInicioPosparto, setFechaInicioPosparto] = useState("");
+  const [fechaFinPosparto, setFechaFinPosparto] = useState("");
   const [diasAusencia, setDiasAusencia] = useState(0);
   const [valorAusentismo, setValorAusentismo] = useState("");
   const [factorPrestacional, setFactorPrestacional] = useState(1.0);
   const [id, setId] = useState<string>("");
   const [salario, setSalario] = useState(0);
   const [contingencia, setContingencia] = useState("");
-  const [licenciaFraccionada, setLicenciaFraccionada] = useState("");
+  const [licenciaFraccionada, setLicenciaFraccionada] = useState(0);
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -44,6 +49,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   };
 
   const valor = async () => {
+    if (licenciaFraccionada > 0) return;
     const dias = await calcularDiasAusencia();
     const factor = salario / 30;
     const valor = dias ? factor * dias : 0;
@@ -71,6 +77,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
           nuevaFechaFinalizacion.toISOString().split("T")[0]
         );
         setIsFechaFinalizacionDisabled(true);
+        return;
       } else {
         setIsFechaFinalizacionDisabled(false);
       }
@@ -92,14 +99,71 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         return;
       }
       setFechaFinalizacion(e.target.value);
+      return;
+    }
+    if (e.target.name === "fechaNacimiento") {
+      setFechaNacimiento(e.target.value);
+      if (licenciaFraccionada > 0) {
+        const factor = -7 * licenciaFraccionada;
+        const fechaNacimientoDate = new Date(e.target.value);
+        const nuevaFechaInicioPreparto = addDays(fechaNacimientoDate, factor);
+        setFechaInicioPreparto(
+          nuevaFechaInicioPreparto.toISOString().split("T")[0]
+        );
+        const nuevaFechaFinPreparto = addDays(fechaNacimientoDate, -1);
+        setFechaFinPreparto(nuevaFechaFinPreparto.toISOString().split("T")[0]);
+        setFechaInicioPosparto(fechaNacimientoDate.toISOString().split("T")[0]);
+        const nuevaFechaFinPosparto = addDays(
+          fechaNacimientoDate,
+          126 + factor
+        );
+        setFechaFinPosparto(nuevaFechaFinPosparto.toISOString().split("T")[0]);
+        setFechaInicio("");
+        setFechaFinalizacion("");
+        setDiasAusencia(126);
+        const factorpordias = salario / 30;
+        const valor = factorpordias * 126;
+        const valorFactorPrestacional = valor * factorPrestacional;
+        const valorFormateado = valorFactorPrestacional.toLocaleString(
+          "es-CO",
+          {
+            style: "currency",
+            currency: "COP",
+          }
+        );
+        if (valorFormateado) {
+          setValorAusentismo(valorFormateado);
+        }
+        return;
+      }
+      setIsFechaInicioDisabled(false);
+      setIsFechaFinalizacionDisabled(false);
+      return;
     }
     if (e.target.name === "factorPrestacional") {
       const value = parseFloat(e.target.value);
       if (isNaN(value) || value < 1.0) {
         alert("El factor prestacional no puede ser menor a 1.0");
         setFactorPrestacional(1.0);
+        return;
       } else {
         setFactorPrestacional(value);
+        if (["Licencia de Maternidad"].includes(contingencia)) {
+          const factor = salario / 30;
+          const valor = factor * 126;
+          const valorFactorPrestacional = valor * value;
+          const valorFormateado = valorFactorPrestacional.toLocaleString(
+            "es-CO",
+            {
+              style: "currency",
+              currency: "COP",
+            }
+          );
+          if (valorFormateado) {
+            setValorAusentismo(valorFormateado);
+          }
+          return;
+        }
       }
     }
   };
@@ -107,9 +171,26 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (e.target.name === "contingencia") {
       setContingencia(e.target.value);
+      if (!["Licencia de Maternidad"].includes(e.target.value)) {
+        setIsFechaInicioDisabled(false);
+        setIsFechaFinalizacionDisabled(false);
+        setLicenciaFraccionada(0);
+        return;
+      }
     }
     if (e.target.name === "licenciaFraccionada") {
-      setLicenciaFraccionada(e.target.value);
+      setLicenciaFraccionada(Number(e.target.value));
+      setFechaNacimiento("");
+      setFechaInicioPreparto("");
+      setFechaFinPreparto("");
+      setFechaInicioPosparto("");
+      setFechaFinPosparto("");
+      setDiasAusencia(0);
+      setValorAusentismo("");
+      setFactorPrestacional(1.0);
+      setFechaInicio("");
+      setFechaFinalizacion("");
+      return;
     }
   };
 
@@ -144,6 +225,14 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               ))}
             </select>
           </div>
+          {["Licencia de Maternidad"].includes(contingencia) && (
+            <div className="md:col-span-2">
+              <label className="block text-red-700">
+                Las licencias de maternidad se registra conforme a lo definido
+                en la Ley 2114 del 29 de Julio del 2021.
+              </label>
+            </div>
+          )}
           {[
             "Accidente de Trabajo",
             "Enfermedad General",
@@ -173,43 +262,118 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 required
                 onChange={handleSelectChange}
               >
-                <option value="">No</option>
-                <option value="1">1 Semana</option>
-                <option value="2">2 Semanas</option>
+                <option value="0">No</option>
+                <option value="1">1 Semana preparto</option>
+                <option value="2">2 Semanas preparto</option>
               </select>
-              <label className="block text-red-700">
-                Las licencias de maternidad se registra conforme a lo definido
-                en la Ley 2114 del 29 de Julio del 2021.
-              </label>
             </div>
           )}
-          <div>
-            <label className="block text-gray-700">Fecha Inicio</label>
-            <input
-              id="fechaInicio"
-              name="fechaInicio"
-              type="date"
-              className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-              required
-              value={fechaInicio}
-              onChange={handleInputChange}
-              onBlur={valor}
-            />
-          </div>
-          <div>
-            <label className="block text-gray-700">Fecha Finalización</label>
-            <input
-              id="fechaFinalizacion"
-              name="fechaFinalizacion"
-              type="date"
-              className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-              required
-              value={fechaFinalizacion}
-              onChange={handleInputChange}
-              onBlur={valor}
-              disabled={isFechaFinalizacionDisabled}
-            />
-          </div>
+          {licenciaFraccionada > 0 && (
+            <div>
+              <label className="block text-gray-700">Fecha de Nacimiento</label>
+              <input
+                id="fechaNacimiento"
+                name="fechaNacimiento"
+                type="date"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+                value={fechaNacimiento}
+                onChange={handleInputChange}
+              />
+            </div>
+          )}
+          {licenciaFraccionada > 0 && (
+            <div>
+              <label className="block text-gray-700">
+                Fecha Inicio Preparto
+              </label>
+              <input
+                id="fechaInicioPreparto"
+                name="fechaInicioPreparto"
+                type="date"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+                value={fechaInicioPreparto}
+                readOnly
+              />
+            </div>
+          )}
+          {licenciaFraccionada > 0 && (
+            <div>
+              <label className="block text-gray-700">Fecha Fin Preparto</label>
+              <input
+                id="fechaFinPreparto"
+                name="fechaFinPreparto"
+                type="date"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+                value={fechaFinPreparto}
+                readOnly
+              />
+            </div>
+          )}
+          {licenciaFraccionada > 0 && (
+            <div>
+              <label className="block text-gray-700">
+                Fecha Inicio Posparto
+              </label>
+              <input
+                id="fechaInicioPosparto"
+                name="fechaInicioPosparto"
+                type="date"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+                value={fechaInicioPosparto}
+                readOnly
+              />
+            </div>
+          )}
+          {licenciaFraccionada > 0 && (
+            <div>
+              <label className="block text-gray-700">Fecha Fin Posparto</label>
+              <input
+                id="fechaFinPosparto"
+                name="fechaFinPosparto"
+                type="date"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+                value={fechaFinPosparto}
+                readOnly
+              />
+            </div>
+          )}
+          {licenciaFraccionada === 0 && (
+            <div>
+              <label className="block text-gray-700">Fecha Inicio</label>
+              <input
+                id="fechaInicio"
+                name="fechaInicio"
+                type="date"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+                value={fechaInicio}
+                onChange={handleInputChange}
+                onBlur={valor}
+                disabled={isFechaInicioDisabled}
+              />
+            </div>
+          )}
+          {licenciaFraccionada === 0 && (
+            <div>
+              <label className="block text-gray-700">Fecha Finalización</label>
+              <input
+                id="fechaFinalizacion"
+                name="fechaFinalizacion"
+                type="date"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+                value={fechaFinalizacion}
+                onChange={handleInputChange}
+                onBlur={valor}
+                disabled={isFechaFinalizacionDisabled}
+              />
+            </div>
+          )}
           <div>
             <label className="block text-gray-700">Dias Ausencia</label>
             <input

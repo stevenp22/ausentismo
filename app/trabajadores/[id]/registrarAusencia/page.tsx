@@ -23,6 +23,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   const [salario, setSalario] = useState(0);
   const [contingencia, setContingencia] = useState("");
   const [licenciaFraccionada, setLicenciaFraccionada] = useState(0);
+  const [prematuro, setPrematuro] = useState(false);
+  const [semanasGestacion, setSemanasGestacion] = useState(24);
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -103,7 +105,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
     }
     if (e.target.name === "fechaNacimiento") {
       setFechaNacimiento(e.target.value);
-      if (licenciaFraccionada > 0) {
+      if (licenciaFraccionada > 0 && !prematuro) {
         const factor = -7 * licenciaFraccionada;
         const fechaNacimientoDate = new Date(e.target.value);
         const nuevaFechaInicioPreparto = addDays(fechaNacimientoDate, factor);
@@ -123,6 +125,35 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         setDiasAusencia(126);
         const factorpordias = salario / 30;
         const valor = factorpordias * 126;
+        const valorFactorPrestacional = valor * factorPrestacional;
+        const valorFormateado = valorFactorPrestacional.toLocaleString(
+          "es-CO",
+          {
+            style: "currency",
+            currency: "COP", 
+          }
+        );
+        if (valorFormateado) {
+          setValorAusentismo(valorFormateado);
+        }
+        return;
+      }
+      if (prematuro) {
+        const diasLicencia = 140 + 7 * (39 - semanasGestacion);
+        const fechaNacimientoDate = new Date(e.target.value);
+        setFechaInicio(fechaNacimientoDate.toISOString().split("T")[0]);
+        setIsFechaInicioDisabled(true);
+        const nuevaFechaFinalizacion = addDays(
+          fechaNacimientoDate,
+          diasLicencia
+        );
+        setFechaFinalizacion(
+          nuevaFechaFinalizacion.toISOString().split("T")[0]
+        );
+        setIsFechaFinalizacionDisabled(true);
+        setDiasAusencia(diasLicencia);
+        const factor = salario / 30;
+        const valor = factor * diasLicencia;
         const valorFactorPrestacional = valor * factorPrestacional;
         const valorFormateado = valorFactorPrestacional.toLocaleString(
           "es-CO",
@@ -148,23 +179,47 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         return;
       } else {
         setFactorPrestacional(value);
-        if (["Licencia de Maternidad"].includes(contingencia)) {
-          const factor = salario / 30;
-          const valor = factor * 126;
-          const valorFactorPrestacional = valor * value;
-          const valorFormateado = valorFactorPrestacional.toLocaleString(
-            "es-CO",
-            {
-              style: "currency",
-              currency: "COP",
-            }
-          );
-          if (valorFormateado) {
-            setValorAusentismo(valorFormateado);
+        const factor = salario / 30;
+        const valor = factor * diasAusencia;
+        const valorFactorPrestacional = valor * value;
+        const valorFormateado = valorFactorPrestacional.toLocaleString(
+          "es-CO",
+          {
+            style: "currency",
+            currency: "COP",
           }
-          return;
+        );
+        if (valorFormateado) {
+          setValorAusentismo(valorFormateado);
         }
+        return;
       }
+    }
+    if (e.target.name === "prematuro") {
+      setPrematuro(e.target.checked);
+      if (e.target.checked) {
+        return;
+      }
+      setFechaInicioPreparto("");
+      setFechaFinPreparto("");
+      setFechaInicioPosparto("");
+      setFechaFinPosparto("");
+      setFechaInicio("");
+      setFechaFinalizacion("");
+      setDiasAusencia(0);
+      setValorAusentismo("");
+    }
+    if (e.target.name === "semanasGestacion") {
+      const value = parseInt(e.target.value);
+      if (isNaN(value) || value < 24 || value > 37) {
+        alert(
+          "Las semanas de gestación deben ser mayor o igual a 24 y menor o igual a 37."
+        );
+        setSemanasGestacion(24);
+        return;
+      }
+      setSemanasGestacion(value);
+      return;
     }
   };
 
@@ -225,7 +280,10 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               ))}
             </select>
           </div>
-          {["Licencia de Maternidad"].includes(contingencia) && (
+          {[
+            "Licencia de Maternidad",
+            "Licencia de Maternidad Parto Múltiple",
+          ].includes(contingencia) && (
             <div className="md:col-span-2">
               <label className="block text-red-700">
                 Las licencias de maternidad se registra conforme a lo definido
@@ -249,7 +307,10 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               />
             </div>
           )}
-          {["Licencia de Maternidad"].includes(contingencia) && (
+          {[
+            "Licencia de Maternidad",
+            "Licencia de Maternidad Parto Múltiple",
+          ].includes(contingencia) && (
             <div>
               <label className="block text-gray-700">
                 Licencia Fraccionada
@@ -268,20 +329,58 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               </select>
             </div>
           )}
-          {licenciaFraccionada > 0 && (
+          {["Licencia de Maternidad Parto Múltiple"].includes(contingencia) && (
             <div>
-              <label className="block text-gray-700">Fecha de Nacimiento</label>
+              <label className="block text-gray-700">
+                ¿Él bebe es prematuro?
+              </label>
               <input
-                id="fechaNacimiento"
-                name="fechaNacimiento"
-                type="date"
-                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
-                value={fechaNacimiento}
+                id="prematuro"
+                name="prematuro"
+                type="checkbox"
+                className="mt-1 transform scale-150"
                 onChange={handleInputChange}
               />
             </div>
           )}
+          {prematuro && (
+            <div>
+              <label className="block text-gray-700">
+                Semanas de Gestación
+              </label>
+              <input
+                id="semanasGestacion"
+                name="semanasGestacion"
+                type="number"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                min={24}
+                max={37}
+                onChange={handleInputChange}
+                value={semanasGestacion}
+              />
+              <label className="block text-red-700">
+                Las semanas de gestación deben ser mayor o igual a 24 y menor o
+                igual a 37.
+              </label>
+            </div>
+          )}
+          {licenciaFraccionada > 0 ||
+            (prematuro && (
+              <div>
+                <label className="block text-gray-700">
+                  Fecha de Nacimiento
+                </label>
+                <input
+                  id="fechaNacimiento"
+                  name="fechaNacimiento"
+                  type="date"
+                  className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                  required
+                  value={fechaNacimiento}
+                  onChange={handleInputChange}
+                />
+              </div>
+            ))}
           {licenciaFraccionada > 0 && (
             <div>
               <label className="block text-gray-700">

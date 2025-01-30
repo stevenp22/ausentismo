@@ -3,7 +3,8 @@ import { buscarTrabajadorId, registrarAusentismo } from "@/app/lib/actions";
 import Link from "next/link";
 import { contingencias, procesos } from "@/app/lib/definitions";
 import { useEffect, useState } from "react";
-import { addDays, set } from "date-fns";
+import { addDays } from "date-fns";
+import Modal from "react-modal";
 
 export default function Page(props: { params: Promise<{ id: string }> }) {
   const [fechaInicio, setFechaInicio] = useState("");
@@ -25,6 +26,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   const [licenciaFraccionada, setLicenciaFraccionada] = useState(0);
   const [prematuro, setPrematuro] = useState(false);
   const [semanasGestacion, setSemanasGestacion] = useState(24);
+  const [showModal, setShowModal] = useState(false);
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -130,7 +132,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
           "es-CO",
           {
             style: "currency",
-            currency: "COP", 
+            currency: "COP",
           }
         );
         if (valorFormateado) {
@@ -198,6 +200,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
     if (e.target.name === "prematuro") {
       setPrematuro(e.target.checked);
       if (e.target.checked) {
+        setShowModal(true);
         return;
       }
       setFechaInicioPreparto("");
@@ -247,6 +250,10 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
       setFechaFinalizacion("");
       return;
     }
+  };
+
+  const closeModal = () => {
+    setShowModal(false);
   };
 
   return (
@@ -343,6 +350,29 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               />
             </div>
           )}
+          <Modal
+            isOpen={showModal}
+            onRequestClose={closeModal}
+            contentLabel="Aviso"
+            className="modal"
+            overlayClassName="overlay"
+            ariaHideApp={false}
+          >
+            <h2 className="text-3xl font-bold text-red-600">Aviso</h2>
+            <p className="text-black my-4">
+              Conforme a la Ley 2114 de 2021 la licencia de maternidad parto
+              múltiple con niños prematuros tiene una duración de 20 semanas
+              (140 días) más las semanas faltantes a la semana 39, por lo cual
+              el sistema lo calcula automáticamente a partir de la fecha de
+              Nacimiento.
+            </p>
+            <button
+              onClick={closeModal}
+              className="w-full bg-red-500 text-white py-2 rounded-md hover:bg-red-600"
+            >
+              Cerrar
+            </button>
+          </Modal>
           {prematuro && (
             <div>
               <label className="block text-gray-700">

@@ -3,7 +3,7 @@ import { buscarTrabajadorId, registrarAusentismo } from "@/app/lib/actions";
 import Link from "next/link";
 import { contingencias, procesos } from "@/app/lib/definitions";
 import { useEffect, useState } from "react";
-import { addDays } from "date-fns";
+import { addDays, set } from "date-fns";
 import Modal from "react-modal";
 
 export default function Page(props: { params: Promise<{ id: string }> }) {
@@ -27,6 +27,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   const [prematuro, setPrematuro] = useState(false);
   const [semanasGestacion, setSemanasGestacion] = useState(24);
   const [showModal, setShowModal] = useState(false);
+  const [genero, setGenero] = useState("");
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -34,6 +35,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
       const trabajador = await buscarTrabajadorId(params.id);
       setId(params.id);
       setSalario(trabajador.salario);
+      setGenero(trabajador.genero);
     };
     fetchParams();
   }, [props.params]);
@@ -93,6 +95,11 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         return;
       }
       setFechaInicio(e.target.value);
+      if (["Permiso por horas Día"].includes(contingencia)) {
+        setFechaFinalizacion(e.target.value);
+        setIsFechaFinalizacionDisabled(true);
+      }
+      return;
     }
     if (e.target.name === "fechaFinalizacion") {
       if (fechaInicio > e.target.value && fechaInicio) {
@@ -140,7 +147,45 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         }
         return;
       }
-      if (prematuro) {
+      if (prematuro && licenciaFraccionada !== 0) {
+        setFechaInicio("");
+        setIsFechaInicioDisabled(true);
+        setFechaFinalizacion("");
+        setIsFechaFinalizacionDisabled(true);
+        const diasLicencia = 140 + 7 * (39 - semanasGestacion);
+        const fechaNacimientoDate = new Date(e.target.value);
+        const nuevaFechaInicioPreparto = addDays(
+          fechaNacimientoDate,
+          -7 * licenciaFraccionada
+        );
+        setFechaInicioPreparto(
+          nuevaFechaInicioPreparto.toISOString().split("T")[0]
+        );
+        const nuevaFechaFinPreparto = addDays(fechaNacimientoDate, -1);
+        setFechaFinPreparto(nuevaFechaFinPreparto.toISOString().split("T")[0]);
+        setFechaInicioPosparto(fechaNacimientoDate.toISOString().split("T")[0]);
+        const nuevaFechaFinalizacion = addDays(
+          fechaNacimientoDate,
+          diasLicencia - 7 * licenciaFraccionada
+        );
+        setFechaFinPosparto(nuevaFechaFinalizacion.toISOString().split("T")[0]);
+        setDiasAusencia(diasLicencia);
+        const factor = salario / 30;
+        const valor = factor * diasLicencia;
+        const valorFactorPrestacional = valor * factorPrestacional;
+        const valorFormateado = valorFactorPrestacional.toLocaleString(
+          "es-CO",
+          {
+            style: "currency",
+            currency: "COP",
+          }
+        );
+        if (valorFormateado) {
+          setValorAusentismo(valorFormateado);
+        }
+        return;
+      }
+      if (prematuro && licenciaFraccionada === 0) {
         const diasLicencia = 140 + 7 * (39 - semanasGestacion);
         const fechaNacimientoDate = new Date(e.target.value);
         setFechaInicio(fechaNacimientoDate.toISOString().split("T")[0]);
@@ -201,8 +246,12 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
       setPrematuro(e.target.checked);
       if (e.target.checked) {
         setShowModal(true);
-        return;
       }
+      if (Number(licenciaFraccionada) === 0 && !e.target.checked) {
+        setIsFechaInicioDisabled(false);
+        setIsFechaFinalizacionDisabled(false);
+      }
+      setFechaNacimiento("");
       setFechaInicioPreparto("");
       setFechaFinPreparto("");
       setFechaInicioPosparto("");
@@ -211,6 +260,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
       setFechaFinalizacion("");
       setDiasAusencia(0);
       setValorAusentismo("");
+      return;
     }
     if (e.target.name === "semanasGestacion") {
       const value = parseInt(e.target.value);
@@ -228,13 +278,49 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     if (e.target.name === "contingencia") {
+      if (
+        [
+          "Licencia de Maternidad",
+          "Licencia de Maternidad Parto Múltiple",
+          "Licencia de Maternidad Nacimiento Prematuro",
+          "Licencia de Maternidad con Hijos con Discapacidad",
+        ].includes(e.target.value) &&
+        genero === "Masculino"
+      ) {
+        alert(
+          "Las licencias de maternidad solo aplican para trabajadores de género femenino"
+        );
+        setContingencia("");
+        e.target.value = "";
+        return;
+      }
+      if (
+        ["Licencia de Paternidad"].includes(e.target.value) &&
+        genero === "Femenino"
+      ) {
+        alert(
+          "Las licencias de paternidad solo aplican para trabajadores de género masculino"
+        );
+        setContingencia("");
+        e.target.value = "";
+        return;
+      }
       setContingencia(e.target.value);
       if (!["Licencia de Maternidad"].includes(e.target.value)) {
         setIsFechaInicioDisabled(false);
         setIsFechaFinalizacionDisabled(false);
         setLicenciaFraccionada(0);
-        return;
       }
+      if (
+        ["Licencia de Maternidad Nacimiento Prematuro"].includes(e.target.value)
+      ) {
+        setPrematuro(true);
+        setShowModal(true);
+      }
+      if (["Permiso por horas Día"].includes(e.target.value)) {
+        setIsFechaFinalizacionDisabled(true);
+      }
+      return;
     }
     if (e.target.name === "licenciaFraccionada") {
       setLicenciaFraccionada(Number(e.target.value));
@@ -248,6 +334,10 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
       setFactorPrestacional(1.0);
       setFechaInicio("");
       setFechaFinalizacion("");
+      if (Number(e.target.value) === 0 && !prematuro) {
+        setIsFechaInicioDisabled(false);
+        setIsFechaFinalizacionDisabled(false);
+      }
       return;
     }
   };
@@ -290,6 +380,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
           {[
             "Licencia de Maternidad",
             "Licencia de Maternidad Parto Múltiple",
+            "Licencia de Maternidad Nacimiento Prematuro",
+            "Licencia de Maternidad con Hijos con Discapacidad",
           ].includes(contingencia) && (
             <div className="md:col-span-2">
               <label className="block text-red-700">
@@ -317,6 +409,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
           {[
             "Licencia de Maternidad",
             "Licencia de Maternidad Parto Múltiple",
+            "Licencia de Maternidad Nacimiento Prematuro",
+            "Licencia de Maternidad con Hijos con Discapacidad",
           ].includes(contingencia) && (
             <div>
               <label className="block text-gray-700">
@@ -336,7 +430,10 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               </select>
             </div>
           )}
-          {["Licencia de Maternidad Parto Múltiple"].includes(contingencia) && (
+          {[
+            "Licencia de Maternidad Parto Múltiple",
+            "Licencia de Maternidad con Hijos con Discapacidad",
+          ].includes(contingencia) && (
             <div>
               <label className="block text-gray-700">
                 ¿Él bebe es prematuro?
@@ -394,23 +491,20 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               </label>
             </div>
           )}
-          {licenciaFraccionada > 0 ||
-            (prematuro && (
-              <div>
-                <label className="block text-gray-700">
-                  Fecha de Nacimiento
-                </label>
-                <input
-                  id="fechaNacimiento"
-                  name="fechaNacimiento"
-                  type="date"
-                  className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                  required
-                  value={fechaNacimiento}
-                  onChange={handleInputChange}
-                />
-              </div>
-            ))}
+          {(licenciaFraccionada !== 0 || prematuro) && (
+            <div>
+              <label className="block text-gray-700">Fecha de Nacimiento</label>
+              <input
+                id="fechaNacimiento"
+                name="fechaNacimiento"
+                type="date"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+                value={fechaNacimiento}
+                onChange={handleInputChange}
+              />
+            </div>
+          )}
           {licenciaFraccionada > 0 && (
             <div>
               <label className="block text-gray-700">
@@ -500,6 +594,30 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 onChange={handleInputChange}
                 onBlur={valor}
                 disabled={isFechaFinalizacionDisabled}
+              />
+            </div>
+          )}
+          {["Permiso por horas Día"].includes(contingencia) && (
+            <div>
+              <label className="block text-gray-700">Hora Inicio</label>
+              <input
+                id="horaInicio"
+                name="horaInicio"
+                type="time"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
+              />
+            </div>
+          )}
+          {["Permiso por horas Día"].includes(contingencia) && (
+            <div>
+              <label className="block text-gray-700">Hora Finalización</label>
+              <input
+                id="horaFinalizacion"
+                name="horaFinalizacion"
+                type="time"
+                className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                required
               />
             </div>
           )}

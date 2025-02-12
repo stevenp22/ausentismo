@@ -3,7 +3,7 @@ import { buscarTrabajadorId, registrarAusentismo } from "@/app/lib/actions";
 import Link from "next/link";
 import { contingencias, procesos } from "@/app/lib/definitions";
 import { useEffect, useState } from "react";
-import { addDays, set } from "date-fns";
+import { addDays } from "date-fns";
 import Modal from "react-modal";
 
 export default function Page(props: { params: Promise<{ id: string }> }) {
@@ -28,6 +28,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   const [semanasGestacion, setSemanasGestacion] = useState(24);
   const [showModal, setShowModal] = useState(false);
   const [genero, setGenero] = useState("");
+  const [horaInicio, setHoraInicio] = useState("");
+  const [horaFinalizacion, setHoraFinalizacion] = useState("");
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -274,6 +276,69 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
       setSemanasGestacion(value);
       return;
     }
+    if (e.target.name === "horaInicio") {
+      setHoraInicio(e.target.value);
+      return;
+    }
+    if (e.target.name === "horaFinalizacion") {
+      setHoraFinalizacion(e.target.value);
+      return;
+    }
+  };
+
+  const handleInputBlur = () => {
+    if (["Permiso por horas Día"].includes(contingencia)) {
+      if (
+        horaInicio > horaFinalizacion &&
+        horaFinalizacion !== "" &&
+        horaInicio !== ""
+      ) {
+        alert("La hora de inicio no puede ser mayor a la hora de finalización");
+        setHoraInicio("");
+        setHoraFinalizacion("");
+        return;
+      }
+
+      if (
+        horaInicio === horaFinalizacion &&
+        horaFinalizacion !== "" &&
+        horaInicio !== ""
+      ) {
+        alert("La hora de inicio no puede ser igual a la hora de finalización");
+        setHoraInicio("");
+        setHoraFinalizacion("");
+        return;
+      }
+      const horaInicioNum = parseInt(horaInicio.replace(":", ""), 10);
+      const horaFinalizacionNum = parseInt(
+        horaFinalizacion.replace(":", ""),
+        10
+      );
+      if (horaFinalizacionNum - horaInicioNum > 800) {
+        alert("El permiso por horas no puede ser mayor a 8 horas");
+        setHoraInicio("");
+        setHoraFinalizacion("");
+        return;
+      }
+      if (horaInicio !== "" && horaFinalizacion !== "") {
+        const horasAusencia = (horaFinalizacionNum - horaInicioNum) / 800;
+        setDiasAusencia(horasAusencia);
+        const factor = salario / 30;
+        const valor = factor * horasAusencia;
+        const valorFactorPrestacional = valor * factorPrestacional;
+        const valorFormateado = valorFactorPrestacional.toLocaleString(
+          "es-CO",
+          {
+            style: "currency",
+            currency: "COP",
+          }
+        );
+        if (valorFormateado) {
+          setValorAusentismo(valorFormateado);
+        }
+        return;
+      }
+    }
   };
 
   const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
@@ -364,8 +429,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               name="contingencia"
               className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
               defaultValue={""}
-              required
               onChange={handleSelectChange}
+              required
             >
               <option value="" disabled>
                 Seleccione una opción
@@ -402,7 +467,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="diagnosticoCIE10"
                 type="text"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
               />
             </div>
           )}
@@ -421,7 +485,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="licenciaFraccionada"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
                 defaultValue={""}
-                required
                 onChange={handleSelectChange}
               >
                 <option value="0">No</option>
@@ -499,7 +562,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="fechaNacimiento"
                 type="date"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
                 value={fechaNacimiento}
                 onChange={handleInputChange}
               />
@@ -515,7 +577,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="fechaInicioPreparto"
                 type="date"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
                 value={fechaInicioPreparto}
                 readOnly
               />
@@ -529,7 +590,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="fechaFinPreparto"
                 type="date"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
                 value={fechaFinPreparto}
                 readOnly
               />
@@ -545,7 +605,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="fechaInicioPosparto"
                 type="date"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
                 value={fechaInicioPosparto}
                 readOnly
               />
@@ -559,7 +618,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="fechaFinPosparto"
                 type="date"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
                 value={fechaFinPosparto}
                 readOnly
               />
@@ -573,7 +631,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="fechaInicio"
                 type="date"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
                 value={fechaInicio}
                 onChange={handleInputChange}
                 onBlur={valor}
@@ -589,7 +646,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="fechaFinalizacion"
                 type="date"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
                 value={fechaFinalizacion}
                 onChange={handleInputChange}
                 onBlur={valor}
@@ -605,7 +661,9 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="horaInicio"
                 type="time"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
+                onChange={handleInputChange}
+                value={horaInicio}
+                onBlur={handleInputBlur}
               />
             </div>
           )}
@@ -617,7 +675,9 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="horaFinalizacion"
                 type="time"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
-                required
+                onChange={handleInputChange}
+                value={horaFinalizacion}
+                onBlur={handleInputBlur}
               />
             </div>
           )}
@@ -628,7 +688,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               name="diasAusencia"
               type="number"
               className="mt-1 block w-full border-2 rounded-md shadow-sm p-2 text-lg text-black bg-gray-200"
-              required
               value={diasAusencia}
               readOnly
             />

@@ -30,6 +30,9 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
   const [genero, setGenero] = useState("");
   const [horaInicio, setHoraInicio] = useState("");
   const [horaFinalizacion, setHoraFinalizacion] = useState("");
+  const [proceso, setProceso] = useState("");
+  const [observaciones, setObservaciones] = useState("");
+  const [diagnosticoCIE10, setDiagnosticoCIE10] = useState("");
 
   useEffect(() => {
     const fetchParams = async () => {
@@ -73,6 +76,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.name === "fechaInicio") {
+      setFechaInicio(e.target.value);
+      setIsFechaFinalizacionDisabled(false);
       if (new Date(e.target.value).getTime() > Date.now()) {
         alert("La fecha de inicio no puede ser mayor a la fecha actual");
         setFechaInicio("");
@@ -86,8 +91,6 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         );
         setIsFechaFinalizacionDisabled(true);
         return;
-      } else {
-        setIsFechaFinalizacionDisabled(false);
       }
       if (e.target.value > fechaFinalizacion && fechaFinalizacion) {
         alert(
@@ -96,12 +99,11 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         setFechaInicio("");
         return;
       }
-      setFechaInicio(e.target.value);
       if (["Permiso por horas Día"].includes(contingencia)) {
         setFechaFinalizacion(e.target.value);
         setIsFechaFinalizacionDisabled(true);
+        return;
       }
-      return;
     }
     if (e.target.name === "fechaFinalizacion") {
       if (fechaInicio > e.target.value && fechaInicio) {
@@ -284,6 +286,14 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
       setHoraFinalizacion(e.target.value);
       return;
     }
+    if (e.target.name === "observaciones") {
+      setObservaciones(e.target.value);
+      return;
+    }
+    if (e.target.name === "diagnosticoCIE10") {
+      setDiagnosticoCIE10(e.target.value);
+      return;
+    }
   };
 
   const handleInputBlur = () => {
@@ -371,6 +381,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         return;
       }
       setContingencia(e.target.value);
+      setPrematuro(false);
       if (!["Licencia de Maternidad"].includes(e.target.value)) {
         setIsFechaInicioDisabled(false);
         setIsFechaFinalizacionDisabled(false);
@@ -405,10 +416,58 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
       }
       return;
     }
+    if (e.target.name === "proceso") {
+      setProceso(e.target.value);
+      return;
+    }
+  };
+
+  const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
+    if (e.target.name === "observaciones") {
+      setObservaciones(e.target.value);
+    }
   };
 
   const closeModal = () => {
     setShowModal(false);
+  };
+
+  const enviarAusentismo = async () => {
+    const formData = new FormData();
+    formData.append("trabajador_id", id);
+    formData.append("contingencia", contingencia);
+    formData.append("diagnosticoCIE10", diagnosticoCIE10);
+    formData.append(
+      "licenciaFraccionada",
+      [
+        "Licencia de Maternidad",
+        "Licencia de Maternidad Parto Múltiple",
+        "Licencia de Maternidad Nacimiento Prematuro",
+        "Licencia de Maternidad con Hijos con Discapacidad",
+      ].includes(contingencia)
+        ? licenciaFraccionada.toString()
+        : ""
+    );
+    formData.append("prematuro", prematuro.toString());
+    formData.append(
+      "semanasGestacion",
+      prematuro ? semanasGestacion.toString() : ""
+    );
+    formData.append("fechaNacimiento", fechaNacimiento);
+    formData.append("fechaInicioPreparto", fechaInicioPreparto);
+    formData.append("fechaFinPreparto", fechaFinPreparto);
+    formData.append("fechaInicioPosparto", fechaInicioPosparto);
+    formData.append("fechaFinPosparto", fechaFinPosparto);
+    formData.append("fechaInicio", fechaInicio);
+    formData.append("fechaFinalizacion", fechaFinalizacion);
+    formData.append("horaInicio", horaInicio);
+    formData.append("horaFinalizacion", horaFinalizacion);
+    formData.append("diasAusencia", diasAusencia.toString());
+    formData.append("valorAusentismo", valorAusentismo);
+    formData.append("proceso", proceso);
+    formData.append("factorPrestacional", factorPrestacional.toString());
+    formData.append("observaciones", observaciones);
+    await registrarAusentismo(formData);
   };
 
   return (
@@ -419,7 +478,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         </h2>
         <form
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          action={registrarAusentismo}
+          action={enviarAusentismo}
         >
           <input type="hidden" name="trabajador_id" value={id} />
           <div className="md:col-span-2">
@@ -467,6 +526,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
                 name="diagnosticoCIE10"
                 type="text"
                 className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
+                value={diagnosticoCIE10}
+                onChange={handleInputChange}
               />
             </div>
           )}
@@ -743,6 +804,8 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               id="observaciones"
               name="observaciones"
               className="mt-1 block w-full h-32 border-2 border-black rounded-md shadow-sm p-4 text-lg text-black align-text-top"
+              value={observaciones}
+              onChange={handleTextAreaChange}
               required
             ></textarea>
           </div>

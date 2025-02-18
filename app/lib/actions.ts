@@ -9,7 +9,17 @@ import {
   registrarTrabajadorDB,
   usuario,
 } from "./data";
-import { CreateAusentismo, CreateTrabajador } from "./zod";
+import {
+  CreateAusentismo,
+  CreateTrabajador,
+  CreateAusentismoMaternidad,
+  CreateAusentismoDiagnostico,
+  CreateAusentismoNo,
+  CreateAusentismoHoras,
+  CreateAusentismoMaternidadFraccionada,
+  CreateAusentismoMaternidadPrematuro,
+  CreateAusentismoMaternidadFraccionadaPrematuro,
+} from "./zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 
@@ -124,7 +134,103 @@ export async function actualizarTrabajador(id: number, formData: FormData) {
 export async function registrarAusentismo(formData: FormData) {
   const rawFormData = Object.fromEntries(formData.entries());
   console.log(rawFormData);
-  CreateAusentismo.parse(rawFormData);
+  if (
+    [
+      "Accidente de trabajo",
+      "Enfermedad General",
+      "Enfermedad Laboral",
+    ].includes(rawFormData.contingencia as string)
+  ) {
+    CreateAusentismoDiagnostico.parse(rawFormData);
+  }
+  if (
+    [
+      "Ausencia no justificada",
+      "Ausencia no remunerada",
+      "Licencia por Calamidad",
+      "Licencia por Luto",
+      "Otros permisos remunerados",
+      "Permiso de Estudio",
+      "Suspenciones",
+    ].includes(rawFormData.contingencia as string)
+  ) {
+    CreateAusentismoNo.parse(rawFormData);
+  }
+  if (["Permiso por horas Día"].includes(rawFormData.contingencia as string)) {
+    CreateAusentismoHoras.parse(rawFormData);
+  }
+  if (
+    [
+      "Licencia de Maternidad",
+      "Licencia de Maternidad Parto Múltiple",
+      "Licencia de Maternidad Nacimiento Prematuro",
+      "Licencia de Maternidad con Hijos con Discapacidad",
+    ].includes(rawFormData.contingencia as string) &&
+    (rawFormData.prematuro as string) === "false" &&
+    (rawFormData.licenciaFraccionada as string) === "0"
+  ) {
+    CreateAusentismoMaternidad.parse(rawFormData);
+  }
+  if (
+    [
+      "Licencia de Maternidad",
+      "Licencia de Maternidad Parto Múltiple",
+      "Licencia de Maternidad Nacimiento Prematuro",
+      "Licencia de Maternidad con Hijos con Discapacidad",
+    ].includes(rawFormData.contingencia as string) &&
+    (rawFormData.prematuro as string) === "false" &&
+    (rawFormData.licenciaFraccionada as string) > "0"
+  ) {
+    CreateAusentismoMaternidadFraccionada.parse(rawFormData);
+  }
+  if (
+    [
+      "Licencia de Maternidad",
+      "Licencia de Maternidad Parto Múltiple",
+      "Licencia de Maternidad Nacimiento Prematuro",
+      "Licencia de Maternidad con Hijos con Discapacidad",
+    ].includes(rawFormData.contingencia as string) &&
+    (rawFormData.prematuro as string) === "true" &&
+    (rawFormData.licenciaFraccionada as string) === "0"
+  ) {
+    CreateAusentismoMaternidadPrematuro.parse(rawFormData);
+  }
+  if (
+    [
+      "Licencia de Maternidad",
+      "Licencia de Maternidad Parto Múltiple",
+      "Licencia de Maternidad Nacimiento Prematuro",
+      "Licencia de Maternidad con Hijos con Discapacidad",
+    ].includes(rawFormData.contingencia as string) &&
+    (rawFormData.prematuro as string) === "true" &&
+    (rawFormData.licenciaFraccionada as string) > "0"
+  ) {
+    CreateAusentismoMaternidadFraccionadaPrematuro.parse(rawFormData);
+  }
+  const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string);
+  fechaNacimiento.setDate(fechaNacimiento.getDate() + 1);
+  const fechaInicioPreparto = new Date(
+    rawFormData.fechaInicioPreparto as string
+  );
+  fechaInicioPreparto.setDate(fechaInicioPreparto.getDate() + 1);
+  const fechaFinPreparto = new Date(rawFormData.fechaFinPreparto as string);
+  fechaFinPreparto.setDate(fechaFinPreparto.getDate() + 1);
+  if (fechaInicioPreparto > fechaFinPreparto) {
+    throw new Error(
+      "La fecha de inicio del preparto no puede ser mayor a la de finalización"
+    );
+  }
+  const fechaInicioPosparto = new Date(
+    rawFormData.fechaInicioPosparto as string
+  );
+  fechaInicioPosparto.setDate(fechaInicioPosparto.getDate() + 1);
+  const fechaFinPosparto = new Date(rawFormData.fechaFinPosparto as string);
+  fechaFinPosparto.setDate(fechaFinPosparto.getDate() + 1);
+  if (fechaInicioPosparto > fechaFinPosparto) {
+    throw new Error(
+      "La fecha de inicio del posparto no puede ser mayor a la de finalización"
+    );
+  }
   const fechaInicio = new Date(rawFormData.fechaInicio as string);
   fechaInicio.setDate(fechaInicio.getDate() + 1);
   const fechaFinalizacion = new Date(rawFormData.fechaFinalizacion as string);
@@ -134,19 +240,31 @@ export async function registrarAusentismo(formData: FormData) {
       "La fecha de inicio no puede ser mayor a la de finalización"
     );
   }
-  const fechaRegistro = new Date().toISOString().split('T')[0];
+  const fechaRegistro = new Date().toISOString().split("T")[0];
+  console.log("Fecha de registro", fechaRegistro);
   try {
     await registrarAusentismoDB(
       Number(rawFormData.trabajador_id),
       rawFormData.contingencia as string,
+      rawFormData.diagnosticoCIE10 as string,
+      Number(rawFormData.licenciaFraccionada),
+      rawFormData.prematuro as string,
+      Number(rawFormData.semanasGestacion),
+      fechaNacimiento,
+      fechaInicioPreparto,
+      fechaFinPreparto,
+      fechaInicioPosparto,
+      fechaFinPosparto,
       fechaInicio,
       fechaFinalizacion,
+      Number(rawFormData.horaInicio),
+      Number(rawFormData.horaFinalizacion),
       Number(rawFormData.diasAusencia),
       rawFormData.valorAusentismo as string,
       rawFormData.proceso as string,
-      rawFormData.factorPrestacional as string,
+      Number(rawFormData.factorPrestacional),
       rawFormData.observaciones as string,
-      fechaRegistro,
+      fechaRegistro
     );
   } catch (error) {
     console.log("Error al registrar ausentismo del trabajador", error);

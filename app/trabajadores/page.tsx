@@ -106,10 +106,10 @@ export default function Page() {
                 Registrar Ausencia
               </Link>
               <Link
-                href={`/trabajadores/${trabajador.id}/prorroga`}
+                href={`/trabajadores/${trabajador.id}/ausencias`}
                 className="bg-red-500 text-white p-2 rounded"
               >
-                Prorroga
+                Consultar Ausencias
               </Link>
             </div>
           </div>

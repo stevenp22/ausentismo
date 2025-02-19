@@ -448,7 +448,17 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
         ? licenciaFraccionada.toString()
         : ""
     );
-    formData.append("prematuro", prematuro.toString());
+    formData.append(
+      "prematuro",
+      [
+        "Licencia de Maternidad",
+        "Licencia de Maternidad Parto Múltiple",
+        "Licencia de Maternidad Nacimiento Prematuro",
+        "Licencia de Maternidad con Hijos con Discapacidad",
+      ].includes(contingencia)
+        ? prematuro.toString()
+        : ""
+    );
     formData.append(
       "semanasGestacion",
       prematuro ? semanasGestacion.toString() : ""
@@ -771,6 +781,7 @@ export default function Page(props: { params: Promise<{ id: string }> }) {
               name="proceso"
               className="mt-1 block w-full border-2 border-black rounded-md shadow-sm p-2 text-lg text-black"
               defaultValue={""}
+              onChange={handleSelectChange}
               required
             >
               <option value="" disabled>

@@ -22,15 +22,27 @@ export type Trabajador = {
 
 export type Ausentismo = {
   id: number;
-  trabajador_id: number;
-  contingencia: string;
-  fechaInicio: Date;
-  fechaFinalizacion: Date;
-  diasAusencia: number;
-  valorAusentismo: string;
-  proceso: string;
-  factorPrestacional: string;
-  observaciones: string;
+    trabajador_id: number;
+    contingencia: string;
+    diagnosticoCIE10: string;
+    licenciaFraccionada: number;
+    prematuro: boolean;
+    semanasGestacion: number;
+    fechaNacimiento: Date;
+    fechaInicioPreparto: Date;
+    fechaFinPreparto: Date;
+    fechaInicioPosparto: Date;
+    fechaFinPosparto: Date;
+    fechaInicio: Date;
+    fechaFinalizacion: Date;
+    horaInicio: string;
+    horaFinalizacion: string;
+    diasAusencia: number;
+    valorAusentismo: string;
+    proceso: string;
+    factorPrestacional: number;
+    observaciones: string;
+    fechaRegistro: Date;
 };
 
 export const contingencias = [

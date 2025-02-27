@@ -214,3 +214,21 @@ export async function registrarAusentismoDB(
     }
   }
 }
+
+export async function buscarAusentismoDB(id: number) {
+  const connection = await mysql.createConnection(mySqlConfig);
+  try {
+    const [results] = await connection.query(
+      "SELECT * FROM Ausentismo WHERE trabajador_id = ?",
+      [id]
+    );
+    return results;
+  } catch (error) {
+    console.log("Error al buscar ausentismo", error);
+    throw new Error("Error al buscar ausentismo");
+  } finally {
+    if (connection) {
+      await connection.end();
+    }
+  }
+}

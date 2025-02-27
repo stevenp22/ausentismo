@@ -3,6 +3,7 @@ import { signIn } from "@/auth";
 import { AuthError } from "next-auth";
 import {
   actualizarTrabajadorDB,
+  buscarAusentismoDB,
   buscarTrabajadorDB,
   buscarTrabajadorIdDB,
   registrarAusentismoDB,
@@ -22,6 +23,7 @@ import {
 } from "./zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Ausentismo } from "./definitions";
 
 export async function authenticate(
   prevState: string | undefined,
@@ -272,4 +274,15 @@ export async function registrarAusentismo(formData: FormData) {
   }
   revalidatePath("/trabajadores");
   redirect("/trabajadores");
+}
+
+export async function buscarAusentismo(id: number): Promise<Ausentismo[]> {
+  try {
+    const resultado = await buscarAusentismoDB(id) as Ausentismo[];
+    console.log("Resultado de la busqueda de ausencias", resultado);
+    return resultado;
+  } catch (error) {
+    console.log("Error al buscar trabajador", error);
+    throw new Error("Error al buscar trabajador");
+  }
 }

@@ -40,6 +40,7 @@ const FormSchemaAusentismo = z.object({
   proceso: z.string(),
   factorPrestacional: z.coerce.number(),
   observaciones: z.string(),
+  fechaRegistro: z.string(),
 });
 
 export const CreateAusentismo = FormSchemaAusentismo.omit({ id: true });

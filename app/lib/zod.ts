@@ -12,8 +12,8 @@ const FormSchemaTrabajador = z.object({
   ocupacion: z.string(),
   tipoVinculacion: z.string(),
   afp: z.string(),
-  jornada: z.enum(["Oficina", "Turnos"]),
-  contratacion: z.enum(["Planta", "Activos"]),
+  jornada: z.enum(["Administrativo", "Asistencial"]),
+  contratacion: z.enum(["Planta", "Tercero"]),
 });
 
 export const CreateTrabajador = FormSchemaTrabajador.omit({ id: true });

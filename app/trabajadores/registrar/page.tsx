@@ -133,8 +133,8 @@ export default function Page() {
               <option value="" disabled>
                 Seleccione una opción
               </option>
-              <option>Oficina</option>
-              <option>Turnos</option>
+              <option>Administrativo</option>
+              <option>Asistencial</option>
             </select>
           </div>
           <div>
@@ -150,7 +150,7 @@ export default function Page() {
                 Seleccione una opción
               </option>
               <option>Planta</option>
-              <option>Activos</option>
+              <option>Tercero</option>
             </select>
           </div>
           <div className="md:col-span-2 flex justify-between">

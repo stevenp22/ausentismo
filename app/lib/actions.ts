@@ -11,7 +11,6 @@ import {
   usuario,
 } from "./data";
 import {
-  CreateAusentismo,
   CreateTrabajador,
   CreateAusentismoMaternidad,
   CreateAusentismoDiagnostico,
@@ -23,7 +22,7 @@ import {
 } from "./zod";
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { Ausentismo } from "./definitions";
+import { Ausentismo, Trabajador } from "./definitions";
 
 export async function authenticate(
   prevState: string | undefined,
@@ -78,8 +77,8 @@ export async function registrarTrabajador(formData: FormData) {
     console.log("Error al registrar trabajador", error);
     throw new Error("Error al registrar trabajador");
   }
-  revalidatePath("/trabajadores");
-  redirect("/trabajadores");
+  //revalidatePath("/trabajadores");
+  //redirect("/trabajadores");
 }
 
 export async function buscarTrabajador(documento: string) {
@@ -278,7 +277,7 @@ export async function registrarAusentismo(formData: FormData) {
 
 export async function buscarAusentismo(id: number): Promise<Ausentismo[]> {
   try {
-    const resultado = await buscarAusentismoDB(id) as Ausentismo[];
+    const resultado = (await buscarAusentismoDB(id)) as Ausentismo[];
     console.log("Resultado de la busqueda de ausencias", resultado);
     return resultado;
   } catch (error) {

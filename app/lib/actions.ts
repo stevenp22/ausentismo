@@ -53,7 +53,7 @@ export async function buscarUsuario(documento: string) {
   }
 }
 
-export async function registrarTrabajador(formData: FormData) {
+export async function registrarTrabajador(formData: FormData, tipo: string) {
   const rawFormData = Object.fromEntries(formData.entries());
   CreateTrabajador.parse(rawFormData);
   const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string);
@@ -77,8 +77,10 @@ export async function registrarTrabajador(formData: FormData) {
     console.log("Error al registrar trabajador", error);
     throw new Error("Error al registrar trabajador");
   }
-  //revalidatePath("/trabajadores");
-  //redirect("/trabajadores");
+  if (tipo === "individual") {
+    revalidatePath("/trabajadores");
+    redirect("/trabajadores");
+  }
 }
 
 export async function buscarTrabajador(documento: string) {

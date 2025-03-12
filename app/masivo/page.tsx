@@ -3,10 +3,14 @@ import { useState } from "react"; // Importa el hook useState de React para mane
 import * as XLSX from "xlsx"; // Importa la librería xlsx para manejar archivos Excel
 import { Trabajador } from "../lib/definitions"; // Importa la definición del tipo Trabajador
 import { registrarTrabajador } from "../lib/actions"; // Importa la función registrarTrabajador para registrar los datos del trabajador
+import { ToastContainer, toast } from "react-toastify"; // Importa ToastContainer y toast de react-toastify
+import "react-toastify/dist/ReactToastify.css"; // Importa los estilos de react-toastify
+import { ClipLoader } from "react-spinners"; // Importa ClipLoader de react-spinners
 
 export default function Page() {
   // Define el componente Page
   const [file, setFile] = useState<File | null>(null); // Define el estado 'file' para almacenar el archivo seleccionado
+  const [loading, setLoading] = useState(false); // Define el estado 'loading' para manejar el estado de carga
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     // Maneja el cambio de archivo en el input
@@ -39,12 +43,15 @@ export default function Page() {
     formData.append("afp", trabajador.afp); // Agrega la AFP del trabajador a formData
     formData.append("jornada", trabajador.jornada); // Agrega la jornada del trabajador a formData
     formData.append("contratacion", trabajador.contratacion); // Agrega la contratación del trabajador a formData
-    registrarTrabajador(formData); // Llama a la función registrarTrabajador para registrar los datos del trabajador
+    registrarTrabajador(formData, "masivo"); // Llama a la función registrarTrabajador para registrar los datos del trabajador
   };
 
   const handleFileUpload = async () => {
     // Maneja la subida del archivo
     if (!file) return; // Si no hay archivo seleccionado, no hace nada
+
+    setLoading(true); // Establece el estado de carga a true
+    toast.info("Procesando archivo, por favor espere sin cerrar ni cambiar de pagina..."); // Muestra una notificación de información
 
     try {
       const reader = new FileReader(); // Crea un nuevo FileReader para leer el archivo
@@ -63,13 +70,20 @@ export default function Page() {
             const trabajador = row as Trabajador; // Convierte la fila a un objeto Trabajador
             processTrabajador(trabajador); // Procesa los datos del trabajador
           });
+
+          toast.success("Archivo procesado exitosamente!"); // Muestra una notificación de éxito
         } catch (error) {
           console.error("Error processing file:", error); // Imprime un error en consola si ocurre un problema al procesar el archivo
+          toast.error("Error procesando el archivo."); // Muestra una notificación de error
+        } finally {
+          setLoading(false); // Establece el estado de carga a false
         }
       };
       reader.readAsArrayBuffer(file); // Lee el archivo como un ArrayBuffer
     } catch (error) {
       console.error("Error reading file:", error); // Imprime un error en consola si ocurre un problema al leer el archivo
+      toast.error("Error leyendo el archivo."); // Muestra una notificación de error
+      setLoading(false); // Establece el estado de carga a false
     }
   };
 
@@ -77,7 +91,7 @@ export default function Page() {
     // Renderiza el componente
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded shadow-md">
-        <h1 className="text-2xl font-bold mb-4 text-black">Page</h1>{" "}
+        <h1 className="text-2xl font-bold mb-4 text-black">Cargue Masivo</h1>{" "}
         {/*Título de la página*/}
         <input
           type="file"
@@ -91,19 +105,22 @@ export default function Page() {
           <button
             onClick={handleFileUpload}
             className="bg-blue-500 text-white px-4 py-2 rounded"
+            disabled={loading} // Deshabilita el botón si está cargando
           >
-            Cargar
+            {loading ? <ClipLoader size={20} color={"#fff"} /> : "Cargar"}
           </button>
           {/*Botón para subir el archivo*/}
           <button
             onClick={() => window.history.back()}
             className="bg-gray-500 text-white px-4 py-2 rounded"
+            disabled={loading} // Deshabilita el botón si está cargando
           >
             Regresar
           </button>
           {/*Botón para regresar*/}
         </div>
       </div>
+      <ToastContainer /> {/* Contenedor de notificaciones */}
     </div>
   );
 }

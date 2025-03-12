@@ -1,17 +1,22 @@
-import Link from "next/link";
-import { registrarTrabajador } from "../../lib/actions";
+import Link from "next/link"; // Importa el componente Link de Next.js para la navegación entre páginas
+import { registrarTrabajador } from "../../lib/actions"; // Importa la función registrarTrabajador desde el archivo de acciones
 
+// Componente principal de la página de registro de trabajadores
 export default function Page() {
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
+      {/* Contenedor principal con estilos para centrar el contenido */}
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-4xl">
+        {/* Título de la página */}
         <h2 className="text-2xl font-bold mb-6 text-gray-800">
           Registrar Trabajador
         </h2>
+        {/* Formulario de registro */}
         <form
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          action={registrarTrabajador}
+          action={(e) => registrarTrabajador(e, "individual")}
         >
+          {/* Campo para el documento del trabajador */}
           <div>
             <label className="block text-gray-700">
               Documento del Trabajador
@@ -24,6 +29,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para el nombre del trabajador */}
           <div>
             <label className="block text-gray-700">Nombre</label>
             <input
@@ -34,6 +40,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para el género del trabajador */}
           <div>
             <label className="block text-gray-700">Genero</label>
             <select
@@ -51,6 +58,7 @@ export default function Page() {
               <option>Otro</option>
             </select>
           </div>
+          {/* Campo para la fecha de nacimiento del trabajador */}
           <div>
             <label className="block text-gray-700">Fecha de Nacimiento</label>
             <input
@@ -61,6 +69,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para el cargo del trabajador */}
           <div>
             <label className="block text-gray-700">Cargo</label>
             <input
@@ -71,6 +80,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para la EPS del trabajador */}
           <div>
             <label className="block text-gray-700">EPS</label>
             <input
@@ -81,6 +91,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para el salario del trabajador */}
           <div>
             <label className="block text-gray-700">Salario</label>
             <input
@@ -91,6 +102,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para la ocupación CIUO del trabajador */}
           <div>
             <label className="block text-gray-700">Ocupación CIUO</label>
             <input
@@ -101,6 +113,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para el tipo de vinculación del trabajador */}
           <div>
             <label className="block text-gray-700">Tipo Vinculación</label>
             <input
@@ -111,6 +124,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para la AFP del trabajador */}
           <div>
             <label className="block text-gray-700">AFP</label>
             <input
@@ -121,6 +135,7 @@ export default function Page() {
               required
             />
           </div>
+          {/* Campo para la jornada del trabajador */}
           <div>
             <label className="block text-gray-700">Jornada</label>
             <select
@@ -137,6 +152,7 @@ export default function Page() {
               <option>Asistencial</option>
             </select>
           </div>
+          {/* Campo para el tipo de contratación del trabajador */}
           <div>
             <label className="block text-gray-700">Contratación</label>
             <select
@@ -153,6 +169,7 @@ export default function Page() {
               <option>Tercero</option>
             </select>
           </div>
+          {/* Botones de acción: Registrar y Regresar */}
           <div className="md:col-span-2 flex justify-between">
             <button
               type="submit"

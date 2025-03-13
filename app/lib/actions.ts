@@ -1,6 +1,9 @@
-"use server";
-import { signIn } from "@/auth";
-import { AuthError } from "next-auth";
+"use server"; // Indica que este archivo se ejecuta en el servidor
+
+import { signIn } from "@/auth"; // Importa la función signIn desde el módulo de autenticación
+import { AuthError } from "next-auth"; // Importa la clase AuthError desde next-auth
+
+// Importa varias funciones y tipos desde el módulo data
 import {
   actualizarTrabajadorDB,
   buscarAusentismoDB,
@@ -10,6 +13,8 @@ import {
   registrarTrabajadorDB,
   usuario,
 } from "./data";
+
+// Importa varios esquemas de validación desde el módulo zod
 import {
   CreateTrabajador,
   CreateAusentismoMaternidad,
@@ -20,44 +25,49 @@ import {
   CreateAusentismoMaternidadPrematuro,
   CreateAusentismoMaternidadFraccionadaPrematuro,
 } from "./zod";
-import { revalidatePath } from "next/cache";
-import { redirect } from "next/navigation";
-import { Ausentismo, Trabajador } from "./definitions";
 
+import { revalidatePath } from "next/cache"; // Importa la función revalidatePath desde next/cache
+import { redirect } from "next/navigation"; // Importa la función redirect desde next/navigation
+import { Ausentismo, Trabajador } from "./definitions"; // Importa los tipos Ausentismo y Trabajador desde el módulo definitions
+
+// Función para autenticar al usuario
 export async function authenticate(
-  prevState: string | undefined,
-  formData: FormData
+  prevState: string | undefined, // Estado previo de la autenticación
+  formData: FormData // Datos del formulario de autenticación
 ) {
   try {
-    await signIn("credentials", formData);
+    await signIn("credentials", formData); // Intenta iniciar sesión con las credenciales proporcionadas
   } catch (error) {
     if (error instanceof AuthError) {
+      // Si ocurre un error de autenticación
       switch (error.type) {
         case "CredentialsSignin":
-          return "Invalid credentials.";
+          return "Invalid credentials."; // Retorna un mensaje de error si las credenciales son inválidas
         default:
-          return "Something went wrong.";
+          return "Something went wrong."; // Retorna un mensaje de error genérico para otros tipos de errores
       }
     }
-    throw error;
+    throw error; // Lanza el error si no es un AuthError
   }
 }
 
+// Función para buscar un usuario por su documento
 export async function buscarUsuario(documento: string) {
   try {
-    const resultado = await usuario(documento);
-    console.log("Resultado de la busqueda de usuarios", resultado);
-    return resultado;
+    const resultado = await usuario(documento); // Busca el usuario en la base de datos
+    console.log("Resultado de la busqueda de usuarios", resultado); // Imprime el resultado en la consola
+    return resultado; // Retorna el resultado de la búsqueda
   } catch (error) {
-    console.log("Error al buscar usuario", error);
+    console.log("Error al buscar usuario", error); // Imprime el error en la consola
   }
 }
 
-export async function registrarTrabajador(formData: FormData, tipo: string) {
-  const rawFormData = Object.fromEntries(formData.entries());
-  CreateTrabajador.parse(rawFormData);
-  const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string);
-  fechaNacimiento.setDate(fechaNacimiento.getDate() + 1);
+// Función para registrar un trabajador
+export async function registrarTrabajador(tipo: string, formData: FormData) {
+  const rawFormData = Object.fromEntries(formData.entries()); // Convierte los datos del formulario a un objeto
+  CreateTrabajador.parse(rawFormData); // Valida los datos del formulario
+  const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string); // Convierte la fecha de nacimiento a un objeto Date
+  fechaNacimiento.setDate(fechaNacimiento.getDate() + 1); // Ajusta la fecha de nacimiento
   try {
     await registrarTrabajadorDB(
       rawFormData.documento as string,
@@ -72,44 +82,46 @@ export async function registrarTrabajador(formData: FormData, tipo: string) {
       rawFormData.afp as string,
       rawFormData.jornada as string,
       rawFormData.contratacion as string
-    );
+    ); // Registra el trabajador en la base de datos
   } catch (error) {
-    console.log("Error al registrar trabajador", error);
-    throw new Error("Error al registrar trabajador");
+    console.log("Error al registrar trabajador", error); // Imprime el error en la consola
+    throw new Error("Error al registrar trabajador"); // Lanza un error si ocurre un problema
   }
   if (tipo === "individual") {
-    revalidatePath("/trabajadores");
-    redirect("/trabajadores");
+    revalidatePath("/trabajadores"); // Revalida la ruta de trabajadores
+    redirect("/trabajadores"); // Redirige a la página de trabajadores
   }
 }
 
+// Función para buscar un trabajador por su documento
 export async function buscarTrabajador(documento: string) {
   try {
-    const resultado = await buscarTrabajadorDB(documento);
-    console.log("Resultado de la busqueda de trabajadores", resultado);
-    return resultado;
+    const resultado = await buscarTrabajadorDB(documento); // Busca el trabajador en la base de datos
+    console.log("Resultado de la busqueda de trabajadores", resultado); // Imprime el resultado en la consola
+    return resultado; // Retorna el resultado de la búsqueda
   } catch (error) {
-    console.log("Error al buscar trabajador", error);
-    throw new Error("Error al buscar trabajador");
+    console.log("Error al buscar trabajador", error); // Imprime el error en la consola
+    throw new Error("Error al buscar trabajador"); // Lanza un error si ocurre un problema
   }
 }
 
+// Función para buscar un trabajador por su ID
 export async function buscarTrabajadorId(id: string) {
   try {
-    const resultado = await buscarTrabajadorIdDB(id);
-    //console.log("Resultado de la busqueda de trabajadores", resultado);
-    return resultado;
+    const resultado = await buscarTrabajadorIdDB(id); // Busca el trabajador en la base de datos por ID
+    return resultado; // Retorna el resultado de la búsqueda
   } catch (error) {
-    console.log("Error al buscar trabajador", error);
-    throw new Error("Error al buscar trabajador");
+    console.log("Error al buscar trabajador", error); // Imprime el error en la consola
+    throw new Error("Error al buscar trabajador"); // Lanza un error si ocurre un problema
   }
 }
 
+// Función para actualizar un trabajador
 export async function actualizarTrabajador(id: number, formData: FormData) {
-  const rawFormData = Object.fromEntries(formData.entries());
-  CreateTrabajador.parse(rawFormData);
-  const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string);
-  fechaNacimiento.setDate(fechaNacimiento.getDate() + 1);
+  const rawFormData = Object.fromEntries(formData.entries()); // Convierte los datos del formulario a un objeto
+  CreateTrabajador.parse(rawFormData); // Valida los datos del formulario
+  const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string); // Convierte la fecha de nacimiento a un objeto Date
+  fechaNacimiento.setDate(fechaNacimiento.getDate() + 1); // Ajusta la fecha de nacimiento
   try {
     await actualizarTrabajadorDB(
       id,
@@ -125,18 +137,21 @@ export async function actualizarTrabajador(id: number, formData: FormData) {
       rawFormData.afp as string,
       rawFormData.jornada as string,
       rawFormData.contratacion as string
-    );
+    ); // Actualiza el trabajador en la base de datos
   } catch (error) {
-    console.log("Error al actualizar trabajador", error);
-    throw new Error("Error al actualizar trabajador");
+    console.log("Error al actualizar trabajador", error); // Imprime el error en la consola
+    throw new Error("Error al actualizar trabajador"); // Lanza un error si ocurre un problema
   }
-  revalidatePath("/trabajadores");
-  redirect("/trabajadores");
+  revalidatePath("/trabajadores"); // Revalida la ruta de trabajadores
+  redirect("/trabajadores"); // Redirige a la página de trabajadores
 }
 
+// Función para registrar un ausentismo
 export async function registrarAusentismo(formData: FormData) {
-  const rawFormData = Object.fromEntries(formData.entries());
-  console.log(rawFormData);
+  const rawFormData = Object.fromEntries(formData.entries()); // Convierte los datos del formulario a un objeto
+  console.log(rawFormData); // Imprime los datos del formulario en la consola
+
+  // Validación de los datos del formulario según el tipo de contingencia
   if (
     [
       "Accidente de trabajo",
@@ -210,6 +225,8 @@ export async function registrarAusentismo(formData: FormData) {
   ) {
     CreateAusentismoMaternidadFraccionadaPrematuro.parse(rawFormData);
   }
+
+  // Conversión y validación de fechas
   const fechaNacimiento = new Date(rawFormData.fechaNacimiento as string);
   fechaNacimiento.setDate(fechaNacimiento.getDate() + 1);
   const fechaInicioPreparto = new Date(
@@ -245,6 +262,8 @@ export async function registrarAusentismo(formData: FormData) {
   }
   const fechaRegistro = new Date().toISOString().split("T")[0];
   console.log("Fecha de registro", fechaRegistro);
+
+  // Registro del ausentismo en la base de datos
   try {
     await registrarAusentismoDB(
       Number(rawFormData.trabajador_id),
@@ -277,6 +296,7 @@ export async function registrarAusentismo(formData: FormData) {
   redirect("/trabajadores");
 }
 
+// Función para buscar ausentismos por ID de trabajador
 export async function buscarAusentismo(id: number): Promise<Ausentismo[]> {
   try {
     const resultado = (await buscarAusentismoDB(id)) as Ausentismo[];

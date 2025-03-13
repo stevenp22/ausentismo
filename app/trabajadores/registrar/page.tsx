@@ -3,6 +3,10 @@ import { registrarTrabajador } from "../../lib/actions"; // Importa la función 
 
 // Componente principal de la página de registro de trabajadores
 export default function Page() {
+  const registrarTrabajadorIndividual = registrarTrabajador.bind(
+    null,
+    "individual"
+  );
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       {/* Contenedor principal con estilos para centrar el contenido */}
@@ -14,7 +18,7 @@ export default function Page() {
         {/* Formulario de registro */}
         <form
           className="grid grid-cols-1 md:grid-cols-2 gap-4"
-          action={(e) => registrarTrabajador(e, "individual")}
+          action={registrarTrabajadorIndividual}
         >
           {/* Campo para el documento del trabajador */}
           <div>

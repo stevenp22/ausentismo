@@ -43,7 +43,7 @@ export default function Page() {
     formData.append("afp", trabajador.afp); // Agrega la AFP del trabajador a formData
     formData.append("jornada", trabajador.jornada); // Agrega la jornada del trabajador a formData
     formData.append("contratacion", trabajador.contratacion); // Agrega la contratación del trabajador a formData
-    registrarTrabajador(formData, "masivo"); // Llama a la función registrarTrabajador para registrar los datos del trabajador
+    registrarTrabajador("masivo", formData); // Llama a la función registrarTrabajador para registrar los datos del trabajador
   };
 
   const handleFileUpload = async () => {
@@ -51,7 +51,9 @@ export default function Page() {
     if (!file) return; // Si no hay archivo seleccionado, no hace nada
 
     setLoading(true); // Establece el estado de carga a true
-    toast.info("Procesando archivo, por favor espere sin cerrar ni cambiar de pagina..."); // Muestra una notificación de información
+    toast.info(
+      "Procesando archivo, por favor espere sin cerrar ni cambiar de pagina..."
+    ); // Muestra una notificación de información
 
     try {
       const reader = new FileReader(); // Crea un nuevo FileReader para leer el archivo

@@ -7,15 +7,6 @@ export default function LoginPage() {
     authenticate,
     undefined
   );
-  const [documentNumber, setDocumentNumber] = useState("");
-  const [password, setPassword] = useState("");
-
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Aquí puedes manejar la lógica de inicio de sesión
-    console.log("Document Number:", documentNumber);
-    console.log("Password:", password);
-  };
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
@@ -38,9 +29,9 @@ export default function LoginPage() {
             </label>
             <input
               type="text"
-              id="documentNumber"
-              value={documentNumber}
-              onChange={(e) => setDocumentNumber(e.target.value)}
+              id="documento"
+              name="documento"
+              autoComplete="documento"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
               required
             />
@@ -54,9 +45,8 @@ export default function LoginPage() {
             </label>
             <input
               type="password"
-              id="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
+              id="contraseña"
+              name="contraseña"
               className="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 mb-3 leading-tight focus:outline-none focus:shadow-outline"
               required
             />
@@ -64,10 +54,22 @@ export default function LoginPage() {
           <div className="flex items-center justify-between">
             <button
               type="submit"
+              aria-disabled={isPending}
               className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded focus:outline-none focus:shadow-outline"
             >
               Iniciar Sesión
             </button>
+            <div
+              className="flex h-8 items-end space-x-1"
+              aria-live="polite"
+              aria-atomic="true"
+            >
+              {errorMessage && (
+                <>
+                  <p className="text-sm text-red-500">{errorMessage}</p>
+                </>
+              )}
+            </div>
           </div>
         </form>
       </div>

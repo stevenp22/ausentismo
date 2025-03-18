@@ -65,9 +65,25 @@ export default function LoginPage() {
               aria-atomic="true"
             >
               {errorMessage && (
-                <>
-                  <p className="text-sm text-red-500">{errorMessage}</p>
-                </>
+                <div className="flex items-center space-x-2">
+                  <svg
+                    className="w-5 h-5 text-red-500"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth="2"
+                      d="M18.364 5.636l-12.728 12.728M5.636 5.636l12.728 12.728"
+                    ></path>
+                  </svg>
+                  <p className="text-sm text-red-500 font-semibold">
+                    {errorMessage}
+                  </p>
+                </div>
               )}
             </div>
           </div>

@@ -1,5 +1,5 @@
 import Link from "next/link"; // Importa el componente Link de Next.js para la navegación entre páginas
-import { registrarTrabajador } from "../../lib/actions"; // Importa la función registrarTrabajador desde el archivo de acciones
+import { registrarTrabajador } from "../lib/actions"; // Importa la función registrarTrabajador desde el archivo de acciones
 
 // Componente principal de la página de registro de trabajadores
 export default function Page() {
@@ -182,7 +182,7 @@ export default function Page() {
               Registrar
             </button>
             <Link
-              href={`/trabajadores`}
+              href={`/inicio`}
               className="md:w-1/2 bg-green-500 text-white py-2 rounded-md hover:bg-green-600 ml-2 text-center"
             >
               Regresar

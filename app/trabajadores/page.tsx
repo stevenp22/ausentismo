@@ -20,15 +20,6 @@ export default function Page() {
   return (
     <div className="bg-white min-h-screen">
       <div className="container mx-auto p-4 bg-white text-black">
-        <div className="mt-4">
-          <h1 className="text-2xl font-bold mb-4">Agregar Trabajador</h1>
-          <Link
-            href="/trabajadores/registrar"
-            className="bg-green-500 text-white p-2 rounded block text-center mb-4"
-          >
-            Registrar Trabajador
-          </Link>
-        </div>
         <div className="mb-4">
           <h1 className="text-2xl font-bold mb-4">Buscar Trabajador</h1>
           <input
@@ -44,6 +35,12 @@ export default function Page() {
           >
             Buscar
           </button>
+          <Link
+            href={`/inicio`}
+            className="md:w-1/2 bg-green-500 text-white py-2 rounded-md hover:bg-green-600 ml-2 text-center"
+          >
+            Regresar
+          </Link>
         </div>
         {trabajador === null && (
           <div className="bg-red-100 p-4 rounded shadow-md">

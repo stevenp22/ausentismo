@@ -28,7 +28,7 @@ import {
 
 import { revalidatePath } from "next/cache"; // Importa la función revalidatePath desde next/cache
 import { redirect } from "next/navigation"; // Importa la función redirect desde next/navigation
-import { Ausentismo, Trabajador } from "./definitions"; // Importa los tipos Ausentismo y Trabajador desde el módulo definitions
+import { Ausentismo } from "./definitions"; // Importa los tipos Ausentismo y Trabajador desde el módulo definitions
 
 // Función para autenticar al usuario
 export async function authenticate(

@@ -1,6 +1,8 @@
 import type { NextAuthConfig } from "next-auth";
 
 export const authConfig = {
+  trustHost: true, // 🔹 Agregamos esta línea para evitar el error de UntrustedHost
+
   pages: {
     signIn: "/",
   },

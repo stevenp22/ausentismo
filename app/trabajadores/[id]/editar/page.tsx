@@ -1,7 +1,6 @@
 import {
   actualizarTrabajador,
   buscarTrabajadorId,
-  registrarTrabajador,
 } from "@/app/lib/actions";
 import Link from "next/link";
 
